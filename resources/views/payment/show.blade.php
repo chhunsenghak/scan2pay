@@ -6,19 +6,19 @@
 <div class="payment-card">
     <div class="eyebrow">Scan to Pay</div>
     <h2 class="payment-title">Payment Request</h2>
-    <p class="payment-subtitle">Amount due <strong>${{ $payment->amount }}</strong></p>
+    <p class="payment-subtitle">Amount due <strong>{{ $payment->currency === 'KHR' ? '៛' : '$' }}{{ number_format($payment->amount, $payment->currency === 'KHR' ? 0 : 2) }}</strong></p>
 
     <div class="qr-wrap">
         <div class="qr-corner-tr"></div>
         <div class="qr-corner-bl"></div>
         <img
-            src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={{ session('deeplink') }}"
+            src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{ urlencode($payment->qr_code) }}"
             alt="Payment QR Code"
         />
     </div>
 
     <div>
-        <a href="{{ session('deeplink') }}" class="pill-btn">
+        <a href="{{ $payment->qr_code }}" class="pill-btn">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
                 <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
@@ -55,8 +55,8 @@
             document.getElementById('status').textContent = 'Payment confirmed!';
             document.getElementById('status').classList.add('paid');
             document.getElementById('status-wrap').classList.add('paid');
-            setTimeout(() => { window.location.href = '/payment/success'; }, 1200);
+            setTimeout(() => { window.location.href = '/'; }, 500);
         }
-    }, 3000);
+    }, 500);
 </script>
 @endsection
