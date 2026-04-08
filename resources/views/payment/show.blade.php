@@ -5,27 +5,41 @@
 @section('content')
 <div class="payment-card">
     <div class="eyebrow">Scan to Pay</div>
+
     <h2 class="payment-title">Payment Request</h2>
-    <p class="payment-subtitle">Amount due <strong>{{ $payment->currency === 'KHR' ? '៛' : '$' }}{{ number_format($payment->amount, $payment->currency === 'KHR' ? 0 : 2) }}</strong></p>
+
+    <p class="payment-subtitle">
+        Amount due 
+        <strong>
+            {{ $payment['currency'] === 'KHR' ? '៛' : '$' }}
+            {{ $payment['currency'] === 'KHR' 
+                ? number_format($payment['amount'], 0) 
+                : number_format($payment['amount'], 2) 
+            }}
+        </strong>
+    </p>
 
     <div class="qr-wrap">
         <div class="qr-corner-tr"></div>
         <div class="qr-corner-bl"></div>
-        <img
-            src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={{ urlencode($payment->qr_code) }}"
-            alt="Payment QR Code"
+
+        {{-- Generate QR from session data --}}
+        <img 
+            src="data:image/png;base64,{{ base64_encode(
+                QrCode::format('png')
+                    ->size(250)
+                    ->errorCorrection('H')
+                    ->generate($payment['qr'])
+            ) }}" 
+            alt="Payment QR Code" 
         />
     </div>
 
-    <div>
-        <a href="{{ $payment->qr_code }}" class="pill-btn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
+    @if(isset($payment['deeplink']))
+        <a href="{{ $payment['deeplink'] }}" class="pill-btn" target="_blank">
             Open in App
         </a>
-    </div>
+    @endif
 
     <div class="divider"></div>
 
@@ -35,28 +49,32 @@
     </div>
 
     <p class="footer-note">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-        Encrypted &amp; secure transaction
+        Encrypted & secure transaction
     </p>
 </div>
 @endsection
 
+
 @section('scripts')
 <script>
-    const paymentId = {{ $payment->id }};
-
+    const transactionId = "{{ $payment['transaction_id'] }}";
+    
     setInterval(async () => {
-        const res  = await fetch(`/payment/${paymentId}/status`);
+        const res = await fetch("{{ route('payment.status') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+            },
+            body: JSON.stringify({ transaction_id: transactionId })
+        });
+
         const data = await res.json();
 
         if (data.status === 'paid') {
             document.getElementById('status').textContent = 'Payment confirmed!';
-            document.getElementById('status').classList.add('paid');
-            document.getElementById('status-wrap').classList.add('paid');
-            setTimeout(() => { window.location.href = '/'; }, 500);
+            window.location.href = '/payment/success';
         }
-    }, 500);
+    }, 3000);
 </script>
-@endsection
+@endsection

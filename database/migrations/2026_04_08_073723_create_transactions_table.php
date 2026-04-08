@@ -11,22 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payments', function (Blueprint $table) {
+        Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->string('order_id')->nullable();
-            $table->decimal('amount', 10, 2);
-            $table->string('currency')->default('USD');
+
+            $table->uuid('transaction_id')->unique();
 
             $table->string('md5')->nullable();
-            $table->string('hash')->nullable();
-            $table->string('short_hash')->nullable();
 
-            $table->string('transaction_id')->nullable();
+            $table->decimal('amount', 12, 2);
+            $table->string('currency', 10);
+
             $table->string('status')->default('pending');
 
-            $table->json('raw_response')->nullable();
+            // Store full webhook payload
+            $table->json('payload')->nullable();
+
+            $table->string('bakong_tx_id')->nullable();
 
             $table->timestamps();
+
+            $table->index('transaction_id');
+            $table->index('md5');
+            $table->index('status');
         });
     }
 
@@ -35,6 +41,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('payments');
+        Schema::dropIfExists('transactions');
     }
 };
